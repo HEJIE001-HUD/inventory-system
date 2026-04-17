@@ -69,4 +69,5 @@ app.post("/api/delete", async (req,res)=>{
   res.send("ok");
 });
 
-app.listen(3000, ()=>console.log("运行成功"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("运行成功"));
