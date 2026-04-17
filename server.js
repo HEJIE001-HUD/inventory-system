@@ -15,15 +15,20 @@ const TABLE_ID = process.env.TABLE_ID;
 let token = "";
 let expire = 0;
 
-// ===== 自动获取token =====
-async function getToken(){
-  if(Date.now() < expire) return token;
+// ===== 首页（解决 Railway 未响应问题）=====
+app.get("/", (req, res) => {
+  res.send("服务正常运行");
+});
 
-  let res = await axios.post(
+// ===== 获取 token =====
+async function getToken() {
+  if (Date.now() < expire) return token;
+
+  const res = await axios.post(
     "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal/",
     {
       app_id: APP_ID,
-      app_secret: APP_SECRET
+      app_secret: APP_SECRET,
     }
   );
 
@@ -32,42 +37,67 @@ async function getToken(){
   return token;
 }
 
-// ===== 查询 =====
-app.get("/api/list", async (req,res)=>{
-  let t = await getToken();
+// ===== 查询库存 =====
+app.get("/api/list", async (req, res) => {
+  try {
+    const t = await getToken();
 
-  let r = await axios.get(
-    `https://open.feishu.cn/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${TABLE_ID}/records`,
-    { headers:{ Authorization:`Bearer ${t}` } }
-  );
+    const r = await axios.get(
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${TABLE_ID}/records`,
+      {
+        headers: { Authorization: `Bearer ${t}` },
+      }
+    );
 
-  res.json(r.data.data.items);
+    res.json(r.data.data.items);
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).send("查询失败");
+  }
 });
 
-// ===== 更新 =====
-app.post("/api/update", async (req,res)=>{
-  let t = await getToken();
+// ===== 更新库存 =====
+app.post("/api/update", async (req, res) => {
+  try {
+    const t = await getToken();
 
-  await axios.put(
-    `https://open.feishu.cn/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${TABLE_ID}/records/${req.body.id}`,
-    { fields:req.body.fields },
-    { headers:{ Authorization:`Bearer ${t}` } }
-  );
+    await axios.put(
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${TABLE_ID}/records/${req.body.id}`,
+      { fields: req.body.fields },
+      {
+        headers: { Authorization: `Bearer ${t}` },
+      }
+    );
 
-  res.send("ok");
+    res.send("ok");
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).send("更新失败");
+  }
 });
 
 // ===== 删除 =====
-app.post("/api/delete", async (req,res)=>{
-  let t = await getToken();
+app.post("/api/delete", async (req, res) => {
+  try {
+    const t = await getToken();
 
-  await axios.delete(
-    `https://open.feishu.cn/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${TABLE_ID}/records/${req.body.id}`,
-    { headers:{ Authorization:`Bearer ${t}` } }
-  );
+    await axios.delete(
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${TABLE_ID}/records/${req.body.id}`,
+      {
+        headers: { Authorization: `Bearer ${t}` },
+      }
+    );
 
-  res.send("ok");
+    res.send("ok");
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).send("删除失败");
+  }
 });
 
+// ===== 关键端口（必须这样写）=====
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("运行成功"));
+
+app.listen(PORT, () => {
+  console.log("服务器已启动，端口：" + PORT);
+});
