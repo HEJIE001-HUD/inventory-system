@@ -1,16 +1,15 @@
 const express = require("express");
 const app = express();
 
-// ===== 最基础测试 =====
 app.get("/", (req, res) => {
   res.send("服务正常运行");
 });
 
-app.get("/test", (req, res) => {
-  res.send("test ok");
+// ===== 测试接口 =====
+app.get("/api/test", (req, res) => {
+  res.json({ msg: "接口正常" });
 });
 
-// ===== 启动 =====
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
